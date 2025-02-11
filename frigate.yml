@@ -1,0 +1,101 @@
+mqtt:
+  enabled: true
+  host: {MQTT_IP_ADDR}
+  user: {FRIGATE_MQTT_LOGIN}
+  password: {FRIGATE_MQTT_PASS}
+
+
+detectors:
+  ov:
+    type: openvino
+    device: GPU
+
+model:
+  model_type: yolonas
+  width: 320 
+  height: 320
+  input_tensor: nchw
+  input_pixel_format: bgr
+  path: {YOLO_PATH}
+  labelmap_path: {YOLO_LABEL_PATH}
+
+detect:
+  enabled: True
+
+record:
+  enabled: True
+#  retain:
+#    days: 0
+#    mode: all
+#  alerts:
+#    retain:
+#      days: 10
+#      mode: active_objects
+###  detections:
+###    retain:
+##      days: 10
+#      mode: active_objects
+
+snapshots:
+  enabled: True
+
+
+
+ffmpeg:
+  #hwaccel_args: preset-intel-qsv-h264
+  #hwaccel_args: -hwaccel vaapi -hwaccel_device /dev/dri/renderD128 -hwaccel_output_format yuv420p
+  hwaccel_args: preset-vaapi
+
+go2rtc:
+  streams:
+    cam_jardin_hd: rtsp://{CAM_JARDIN_LOGIN}:{CAM_JARDIN_PASS}@{CAM_JARDIN_ADDR}:554/live/ch0
+    cam_jardin_sd: rtsp://{CAM_JARDIN_LOGIN}:{CAM_JARDIN_PASS}@{CAM_JARDIN_ADDR}:554/live/ch1
+    cam_salon_hd: rtsp://{CAM_SALON_LOGIN}:{CAM_SALON_PASS}@{CAM_SALON_ADDR}:554/live/ch0
+    cam_salon_sd: rtsp://{CAM_SALON_LOGIN}:{CAM_SALON_PASS}@{CAM_SALON_ADDR}:554/live/ch1
+
+cameras:
+  frigate_cam_jardin:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_jardin_hd
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+            - audio
+        - path: rtsp://127.0.0.1:8554/cam_jardin_sd
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    objects:
+      track:
+        - person
+        - dog
+        - cat
+        - bird
+
+    zones: {}
+    motion:
+      mask: 0.006,0.34,0.368,0.34,0.679,0.455,0.973,0.388,0.994,0.039,1,0.021,0.014,0.026
+
+  frigate_cam_salon:
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/cam_salon_hd
+          input_args: preset-rtsp-restream
+          roles:
+           - record
+           - audio
+        - path: rtsp://127.0.0.1:8554/cam_salon_sd
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+
+    objects:
+      track:
+        - person
+        - cat
+
+    zones:
+      hour:
+        coordinates: 0.725,0.003,0.727,0.05,0.985,0.045,0.989,0.01
+        loitering_time: 0
